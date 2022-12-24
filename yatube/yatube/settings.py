@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-#%d7waucy02*7)#x-40(yfn+ij_e8oq7^_*^vc1*@*8(omt#re"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -58,6 +58,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
 ROOT_URLCONF = 'yatube.urls'
 
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
@@ -79,6 +85,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'yatube.wsgi.application'
+
+CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases

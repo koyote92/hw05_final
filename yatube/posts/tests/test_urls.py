@@ -2,7 +2,7 @@ from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from http import HTTPStatus
 
-from ..models import Post, Group
+from ..models import Post, Group, Comment
 
 User = get_user_model()
 
@@ -34,12 +34,21 @@ class PostsURLTests(TestCase):
         cls.url_post_update = f'/posts/{cls.test_post.id}/edit/'
         cls.url_post_delete = f'/posts/{cls.test_post.id}/delete/'
         cls.url_add_comment = f'/posts/{cls.test_post.id}/comment/'
+        cls.url_non_existing = '/not-existing/'
+        cls.url_internal_error = '/core/500.html'
 
     def setUp(self):
         self.guest_client = Client()
         self.user = User.objects.create_user(username='test-user')
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+        self.test_comment = Comment.objects.create(
+            text='Текст тестового коммента',
+            author=self.user,
+            post=self.test_post,
+        )
+        self.url_comment_delete = (f'/posts/{self.test_post.id}/comment/'
+                                   f'{self.test_comment.id}/delete/')
 
     def test_public_pages_url_exists_at_desired_location(self):
         """Проверка доступа к общедоступным страницам."""
@@ -100,6 +109,9 @@ class PostsURLTests(TestCase):
                 f'/auth/login/?next=/posts/{self.test_post.id}/delete/',
             self.url_add_comment:
                 f'/auth/login/?next=/posts/{self.test_post.id}/comment/',
+            self.url_comment_delete:
+                f'/auth/login/?next=/posts/{self.test_post.id}/comment/'
+                f'{self.test_comment.id}/delete/'
         }
         for value, expected in auth_pages_urls_redirects_unauthorized.items():
             response = self.guest_client.get(value)
@@ -136,6 +148,7 @@ class PostsURLTests(TestCase):
         author_only_urls = {
             self.url_post_update: self.url_post_details,
             self.url_post_delete: self.url_post_details,
+            self.url_comment_delete: self.url_post_details
         }
         for value, expected in author_only_urls.items():
             response = self.authorized_client.get(value)

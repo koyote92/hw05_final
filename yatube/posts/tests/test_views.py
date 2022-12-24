@@ -143,8 +143,36 @@ class PostsPagesTests(TestCase):
                 'posts:post_delete',
                 kwargs={'post_id': test_post.id}),
             follow=True)
+        post = Post.objects.last()
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(Post.objects.count(), 1)
+        self.assertNotEqual(
+            post.text,
+            'Тестовый текст удаляемого поста'
+        )
+
+    def test_comment_delete_view(self):
+        test_comment = Comment.objects.create(
+            text='Тестовый комментарий, который удалим',
+            post=self.test_post,
+            author=self.user,
+        )
+        response = self.authorized_client.get(
+            reverse(
+                'posts:comment_delete',
+                kwargs={
+                    'post_id': self.test_post.id,
+                    'comment_id': test_comment.id,
+                }
+            ),
+            follow=True)
+        comment = Comment.objects.last()
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(Comment.objects.count(), 1)
+        self.assertNotEqual(
+            comment.text,
+            'Тестовый комментарий, который удалим'
+        )
 
 
 class PaginatorViewsTestCase(TestCase):

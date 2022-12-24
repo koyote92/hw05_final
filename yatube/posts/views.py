@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 from .forms import PostForm, CommentForm
-from .models import Post, Group, User, Comment
+from .models import Post, Group, User
 from .utils import paginate_page
 
 
@@ -56,7 +56,7 @@ def post_create(request):
         post_item = form.save(commit=False)
         post_item.author = request.user
         post_item.save()
-        return redirect('posts:profile', post_item.author)
+        return redirect('posts:profile', post_item.author.username)
 
     return render(
         request,
@@ -88,7 +88,7 @@ def post_edit(request, post_id):
 
 @login_required
 def post_delete(request, post_id):
-    post = Post.objects.get(id=post_id)
+    post = get_object_or_404(Post.objects.select_related('group'), id=post_id)
     if request.user == post.author:
         post.delete()
         return redirect('posts:index')
@@ -98,8 +98,8 @@ def post_delete(request, post_id):
 
 @login_required
 def add_comment(request, post_id):
-    post = get_object_or_404(Post.objects.select_related('group'), id=post_id)
-    comments = post.comments.select_related('author')  # Правильно?
+    post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
+    comments = post.comments.select_related('post')  # Правильно? Или 404?
     form = CommentForm(request.POST or None)
     if form.is_valid():
         comment = form.save(commit=False)
@@ -108,7 +108,7 @@ def add_comment(request, post_id):
         comment.save()
         return redirect('posts:post_details', post_id)
     # Без добавления render при ошибке валидации формы не показывает
-    # пользователю ValidationError. Может есть и другой способ выводить их,
+    # пользователю ValidationError. Может есть и другой способ выводить ошибки,
     # например через messages, но я сделал как в PostForm. В коде от теории,
     # как обычно, view выглядит по-другому, пришлось писать свою.
     context = {
@@ -117,3 +117,17 @@ def add_comment(request, post_id):
         'form': form,
     }
     return render(request, 'posts/post_details.html', context)
+
+
+# А эта вьюха чисто для себя, чтобы не засирать комменты тестовой хернёй.
+# Лень тесты писать... Но написал :-P
+@login_required
+def delete_comment(request, post_id, comment_id):
+    post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
+    comment = get_object_or_404(post.comments.select_related('post'),
+                                id=comment_id)
+    if request.user == comment.author:
+        comment.delete()
+        return redirect('posts:post_details', post_id)
+    messages.error(request, 'Вы не можете удалять чужие комментарии!')
+    return redirect('posts:post_details', post_id)

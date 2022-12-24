@@ -42,6 +42,7 @@ class Post(models.Model):
         auto_now_add=True,
         verbose_name='Дата публикации',
         help_text='Дата публикации поста',
+        db_index=True,
     )
     author = models.ForeignKey(
         User,
@@ -106,3 +107,16 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text[:settings.SELF_TEXT_LENGTH]
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='follower',
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='following',
+    )

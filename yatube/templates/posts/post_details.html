@@ -52,6 +52,9 @@
                     <p>
                         {{ comment.text }}
                     </p>
+                    {% if comment.author == request.user %}
+                        <a href="{% url 'posts:comment_delete' post.id comment.id %}">Удалить</a>
+                    {% endif %}
                 </div>
             </div>
         {% endfor %}
