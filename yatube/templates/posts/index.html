@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load thumbnail %}
+{% block title %}{{ title }}{% endblock title %}
+{% block content %}
+    <div class="container py-5">
+        <h2>Последние обновления на сайте</h2>
+        <br>
+        {% for post in page_obj %}
+            <article>
+                <ul>
+                    <li>
+                        Автор: <a
+                            href="{% url 'posts:profile' post.author.username %}">{{ post.author.get_full_name }}</a>
+                    </li>
+                    {% if post.group %}
+                        <li>
+                            Группа: <a href="{% url 'posts:group' post.group.slug %}">{{ post.group }}</a>
+                        </li>
+                    {% endif %}
+                    <li>
+                        Дата публикации: {{ post.pub_date|date:"d E Y" }}
+                    </li>
+                </ul>
+                {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+                    <img class="card-img my-2" src="{{ im.url }}">
+                {% endthumbnail %}
+                <p>
+                    {{ post.text }}
+                </p>
+            </article>
+            <button type="button" class="btn btn-primary">
+                <a href="{% url 'posts:post_details' post.id %}">
+                    <span style="color:white">Подробная информация</span>
+                </a>
+            </button>
+            {% if not forloop.last %}
+                <hr>{% endif %}
+        {% endfor %}
+        {% include 'posts/includes/paginator.html' %}
+    </div>
+{% endblock %}
