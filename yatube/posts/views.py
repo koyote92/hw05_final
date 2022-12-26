@@ -107,7 +107,7 @@ def post_delete(request, post_id):
 @login_required
 def add_comment(request, post_id):
     post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
-    comments = post.comments.select_related('post')  # Правильно? Или 404?
+    comments = post.comments.select_related('posts')  # Правильно? Или 404?
     form = CommentForm(request.POST or None)
     if form.is_valid():
         comment = form.save(commit=False)
@@ -132,7 +132,7 @@ def add_comment(request, post_id):
 @login_required
 def delete_comment(request, post_id, comment_id):
     post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
-    comment = get_object_or_404(post.comments.select_related('post'),
+    comment = get_object_or_404(post.comments.select_related('posts'),
                                 id=comment_id)
     if request.user == comment.author:
         comment.delete()
@@ -144,8 +144,9 @@ def delete_comment(request, post_id, comment_id):
 # Я всё. Кончился.
 # Списал вьюхи с какого-то расшаренного проекта из сети, где хватило мозгов -
 # адаптировал. Подправил поведение кнопок в шаблонах. Я понимаю логику их
-# работы, если что, у меня просто никакого настроения нет их писать ради этого
-# тупого проекта. Можешь бить меня по рукам.
+# работы, если что. У меня просто никакого настроения нет их писать ради этого
+# проекта. Можешь бить меня по рукам. Может, я за свою честность огребу, но
+# заслуженно.
 @login_required
 def follow_index(request):
     posts = Post.objects.filter(author__following__user=request.user)
@@ -155,7 +156,7 @@ def follow_index(request):
 
 @login_required
 def profile_follow(request, username):
-    author = User.objects.get(username=username)
+    author = get_object_or_404(User, username=username)
     is_follower = Follow.objects.filter(user=request.user, author=author)
     if request.user != author and not is_follower.exists():
         Follow.objects.create(user=request.user, author=author)
