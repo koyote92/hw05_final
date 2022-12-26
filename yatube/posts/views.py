@@ -1,7 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.urls import reverse
 
 from .forms import PostForm, CommentForm
 from .models import Post, Group, User, Follow
