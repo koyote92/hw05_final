@@ -106,7 +106,7 @@ def post_delete(request, post_id):
 @login_required
 def add_comment(request, post_id):
     post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
-    comments = post.comments.select_related('posts')  # Правильно? Или 404?
+    comments = post.comments.select_related('post')  # Правильно? Или 404?
     form = CommentForm(request.POST or None)
     if form.is_valid():
         comment = form.save(commit=False)
@@ -131,7 +131,7 @@ def add_comment(request, post_id):
 @login_required
 def delete_comment(request, post_id, comment_id):
     post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
-    comment = get_object_or_404(post.comments.select_related('posts'),
+    comment = get_object_or_404(post.comments.select_related('post'),
                                 id=comment_id)
     if request.user == comment.author:
         comment.delete()
