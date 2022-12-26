@@ -2,13 +2,11 @@
 {% load thumbnail %}
 {% load cache %}
 {% block title %}{{ title }}{% endblock title %}
-{% load cache %}
 {% block content %}
     {% include 'posts/includes/switcher.html' %}
     <div class="container py-5">
-        <h2>Последние обновления на сайте</h2>
+        <h2>Подписки</h2>
         <br>
-        {% cache 20 index_page %}
             {% for post in page_obj %}
                 <article>
                     <ul>
@@ -40,7 +38,6 @@
                 {% if not forloop.last %}
                     <hr>{% endif %}
             {% endfor %}
-        {% endcache %}
         {% include 'posts/includes/paginator.html' %}
     </div>
 {% endblock %}

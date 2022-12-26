@@ -2,8 +2,9 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 from http import HTTPStatus
+from django.core.cache import cache
 
-from ..models import Post, Group, Comment
+from ..models import Post, Group, Comment, Follow
 
 User = get_user_model()
 
@@ -66,7 +67,7 @@ class PostsPagesTests(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-    def test_pages_uses_correct_templates(self):  # Здесь нужен юзер-автор.
+    def test_pages_use_correct_templates(self):  # Здесь нужен юзер-автор.
         authorized_client = PostsPagesTests.authorized_client
         templates_pages_names = {
             self.url_index: 'posts/index.html',
@@ -175,7 +176,7 @@ class PostsPagesTests(TestCase):
         )
 
 
-class PaginatorViewsTestCase(TestCase):
+class PaginatorViewsTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -197,7 +198,7 @@ class PaginatorViewsTestCase(TestCase):
         Post.objects.bulk_create(fixtures)
 
     def test_first_pages_with_paginator_contains_ten_records(self):
-        authorized_client = PaginatorViewsTestCase.authorized_client
+        authorized_client = PaginatorViewsTest.authorized_client
         pages_tested = {
             'posts:index': None,
             'posts:group': {'slug': 'test-slug'},
@@ -212,7 +213,7 @@ class PaginatorViewsTestCase(TestCase):
                 self.assertEqual(len(response.context['page_obj']), 10)
 
     def test_second_pages_with_paginator_contains_three_records(self):
-        authorized_client = PaginatorViewsTestCase.authorized_client
+        authorized_client = PaginatorViewsTest.authorized_client
         pages_tested = {
             'posts:index': None,
             'posts:group': {'slug': 'test-slug'},
@@ -225,3 +226,87 @@ class PaginatorViewsTestCase(TestCase):
                     kwargs=kwargs
                 ) + '?page=2')
                 self.assertEqual(len(response.context['page_obj']), 3)
+
+
+class IndexCacheTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.test_user = User.objects.create_user(username='test-user')
+        cls.test_post = Post.objects.create(
+            author=cls.test_user,
+            text='Тестовая запись для создания поста')
+        cls.url_index = reverse('posts:index')
+
+    def setUp(self):
+        self.guest_client = Client()
+        self.user = User.objects.create_user(username='test-user-auth')
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
+
+    def test_cache_index_page(self):
+        first_state = self.authorized_client.get(self.url_index)
+        # print(f'\n{first_state.content}')
+        # print('--------------------------------')
+        # print(first_state.context['page_obj'][0].text)
+        post = Post.objects.get(id=self.test_post.id)
+        post.text = 'Изменённый текст'
+        post.save()
+        second_state = self.authorized_client.get(self.url_index)
+        # print(f'\n{second_state.content}')
+        # print('--------------------------------')
+        # print(second_state.context['page_obj'][0].text)
+        self.assertEqual(first_state.content, second_state.content)
+        cache.clear()
+        third_state = self.authorized_client.get(self.url_index)
+        self.assertNotEqual(first_state.content, third_state.content)
+
+
+# И тут я тоже копировал/вставил, только сделал сетапкласс по-своему.
+# Вчера объяснял двум студентам, как делать тесты вьюх, нашёл пару интересных
+# решений, как отрефакторить тесты и узнал методом научного тыка, что юзера
+# можно создавать в сетапклассе, а логинить в сетапе. Тогда можно избежать
+# разлогиниваний в процессе тестов. Но этот проект пефакторить не хочу.
+class FollowTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.follower = User.objects.create_user(username='follower')
+        cls.following = User.objects.create_user(username='following')
+        cls.test_post = Post.objects.create(
+            author=cls.following,
+            text='Тестовый текст'
+        )
+
+    def setUp(self):
+        self.authorized_follower = Client()
+        self.authorized_following = Client()
+        self.authorized_follower.force_login(self.follower)
+        self.authorized_following.force_login(self.following)
+
+    def test_follow(self):
+        self.authorized_follower.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': self.following.username},
+        ))
+        self.assertEqual(Follow.objects.all().count(), 1)
+
+    def test_unfollow(self):
+        self.authorized_follower.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': self.following.username},
+        ))
+        self.authorized_follower.get(reverse(
+            'posts:profile_unfollow',
+            kwargs={'username': self.following.username},
+        ))
+        self.assertEqual(Follow.objects.all().count(), 0)
+
+    def test_subscription_feed(self):
+        Follow.objects.create(user=self.follower,
+                              author=self.following)
+        response = self.authorized_follower.get('/follow/')
+        post_text_0 = response.context["page_obj"][0].text
+        self.assertEqual(post_text_0, 'Тестовый текст')
+        response = self.authorized_following.get('/follow/')
+        self.assertNotContains(response, 'Тестовый текст')
