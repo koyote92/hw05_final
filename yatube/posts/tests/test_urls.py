@@ -1,8 +1,9 @@
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from http import HTTPStatus
 
-from ..models import Post, Group, Comment
+from ..models import Post, Group, Comment, Follow
 
 User = get_user_model()
 
@@ -27,15 +28,18 @@ class PostsURLTests(TestCase):
             author=cls.test_author,
         )
         cls.url_index = '/'
-        cls.url_group = '/group/test-slug/'
-        cls.url_profile = '/profile/test-user/'
+        cls.url_group = f'/group/{cls.test_group.slug}/'
+        cls.url_profile = f'/profile/{cls.test_author.username}/'
         cls.url_post_details = f'/posts/{cls.test_post.id}/'
         cls.url_post_create = '/create/'
         cls.url_post_update = f'/posts/{cls.test_post.id}/edit/'
         cls.url_post_delete = f'/posts/{cls.test_post.id}/delete/'
         cls.url_add_comment = f'/posts/{cls.test_post.id}/comment/'
-        cls.url_non_existing = '/not-existing/'
-        cls.url_internal_error = '/core/500.html'
+        cls.url_follow = '/follow/'
+        cls.url_profile_follow = f'/profile/{cls.test_author.username}/follow/'
+        cls.url_profile_unfollow = (
+            f'/profile/{cls.test_author.username}/unfollow/'
+        )
 
     def setUp(self):
         self.guest_client = Client()
@@ -72,6 +76,7 @@ class PostsURLTests(TestCase):
             self.url_post_details: 'posts/post_details.html',
         }
         for value, expected in public_pages_templates.items():
+            cache.clear()
             response = self.guest_client.get(value)
             with self.subTest(value=value):
                 self.assertTemplateUsed(
@@ -80,9 +85,15 @@ class PostsURLTests(TestCase):
     def test_authorized_pages_url_exists_at_desired_location(self):
         """Проверка доступа к страницам с использованием авторизации
         (все пользователи)."""
-        authorized_pages_urls = (self.url_post_create, self.url_add_comment)
+        authorized_pages_urls = (
+            self.url_post_create,
+            self.url_add_comment,
+            self.url_profile_follow,
+            self.url_profile_unfollow,
+            self.url_follow,
+        )
         for item in authorized_pages_urls:
-            response = self.authorized_client.get(item)
+            response = self.authorized_client.get(item, follow=True)
             with self.subTest(item=item):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -92,6 +103,7 @@ class PostsURLTests(TestCase):
         authorized_pages_templates = {
             self.url_post_create: 'posts/create_post.html',
             self.url_add_comment: 'posts/post_details.html',
+            self.url_follow: 'posts/follow.html',
         }
         for value, expected in authorized_pages_templates.items():
             response = self.authorized_client.get(value)

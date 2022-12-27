@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load thumbnail %}
 {% load cache %}
-{% block title %}{{ title }}{% endblock title %}
+{% block title %}Подписки {{ request.user.username }}{% endblock title %}
 {% block content %}
     {% include 'posts/includes/switcher.html' %}
     <div class="container py-5">

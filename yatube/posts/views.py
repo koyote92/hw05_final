@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import cache_page
 from django.contrib import messages
 
 from .forms import PostForm, CommentForm
@@ -7,6 +8,9 @@ from .models import Post, Group, User, Follow
 from .utils import paginate_page
 
 
+# Я тоже сюда сначала добавил кэширование, а потом в теории сказали "в этом
+# проекте пихайте в шаблон".
+@cache_page(20)
 def index(request):
     posts = Post.objects.select_related('author', 'group')
     page_obj = paginate_page(request, posts)
@@ -114,10 +118,6 @@ def add_comment(request, post_id):
         comment.post = post
         comment.save()
         return redirect('posts:post_details', post_id)
-    # Без добавления render при ошибке валидации формы не показывает
-    # пользователю ValidationError. Может есть и другой способ выводить ошибки,
-    # например через messages, но я сделал как в PostForm. В коде от теории,
-    # как обычно, view выглядит по-другому, пришлось писать свою.
     context = {
         'post': post,
         'comments': comments,
@@ -126,8 +126,8 @@ def add_comment(request, post_id):
     return render(request, 'posts/post_details.html', context)
 
 
-# А эта вьюха чисто для себя, чтобы не засирать комменты тестовой хернёй.
-# Лень тесты писать... Но написал :-P
+# Я сам уже думал, что это лучше делать не так. Пока оставлю как есть, чтобы
+# убирать тестовые комменты.
 @login_required
 def delete_comment(request, post_id, comment_id):
     post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
@@ -140,12 +140,6 @@ def delete_comment(request, post_id, comment_id):
     return redirect('posts:post_details', post_id)
 
 
-# Я всё. Кончился.
-# Списал вьюхи с какого-то расшаренного проекта из сети, где хватило мозгов -
-# адаптировал. Подправил поведение кнопок в шаблонах. Я понимаю логику их
-# работы, если что. У меня просто никакого настроения нет их писать ради этого
-# проекта. Можешь бить меня по рукам. Может, я за свою честность огребу, но
-# заслуженно.
 @login_required
 def follow_index(request):
     posts = Post.objects.filter(author__following__user=request.user)
@@ -156,8 +150,8 @@ def follow_index(request):
 @login_required
 def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
-    is_follower = Follow.objects.filter(user=request.user, author=author)
-    if request.user != author and not is_follower.exists():
+    create_follow = Follow.objects.filter(user=request.user, author=author)
+    if request.user != author and not create_follow.exists():
         Follow.objects.create(user=request.user, author=author)
     return redirect('posts:profile', username)
 

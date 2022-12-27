@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.db.models.constraints import UniqueConstraint
 
-from . import settings
+from . import constants
 
 
 User = get_user_model()
@@ -71,7 +72,7 @@ class Post(models.Model):
         verbose_name_plural = 'Публикации'
 
     def __str__(self):
-        return self.text[:settings.SELF_TEXT_LENGTH]
+        return self.text[:constants.SELF_TEXT_LENGTH]
 
 
 class Comment(models.Model):
@@ -82,30 +83,27 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Пост',
-        help_text='Комментируемая публикация',
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Автор',
-        help_text='Имя создателя комментария',
     )
     text = models.TextField(
         verbose_name='Текст',
-        help_text='Текст комментария',
+        help_text='Текст комментария',  # Это в форме участвует.
     )
     created = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата комментария',
-        help_text='Дата публикации комментария',
     )
 
     class Meta:
         ordering = ['-created']
 
     def __str__(self):
-        return self.text[:settings.SELF_TEXT_LENGTH]
+        return self.text[:constants.SELF_TEXT_LENGTH]
 
 
 class Follow(models.Model):
@@ -119,3 +117,8 @@ class Follow(models.Model):
         on_delete=models.CASCADE,
         related_name='following',
     )
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['following', 'follower'], name='follow')
+        ]

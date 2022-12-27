@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from .. import settings
+from .. import constants
 from ..models import Group, Post, Comment
 
 User = get_user_model()
@@ -33,9 +33,9 @@ class PostModelTest(TestCase):
         group = PostModelTest.test_group
         comment = PostModelTest.test_comment
         models_title = {
-            str(post): post.text[:settings.SELF_TEXT_LENGTH],
+            str(post): post.text[:constants.SELF_TEXT_LENGTH],
             str(group): group.title,
-            str(comment): comment.text[:settings.SELF_TEXT_LENGTH],
+            str(comment): comment.text[:constants.SELF_TEXT_LENGTH],
         }
         for title, expected in models_title.items():
             with self.subTest():
@@ -113,10 +113,7 @@ class PostModelTest(TestCase):
         """help_text в полях модели comment совпадает с ожидаемым."""
         comment = PostModelTest.test_comment
         field_help_texts = {
-            'post': 'Комментируемая публикация',
-            'author': 'Имя создателя комментария',
             'text': 'Текст комментария',
-            'created': 'Дата публикации комментария',
         }
         for value, expected in field_help_texts.items():
             with self.subTest(value=value):

@@ -61,6 +61,9 @@ class PostsPagesTests(TestCase):
             kwargs={'post_id': cls.test_post.id}
         )
 
+    # def tearDownClass(cls):
+    #     ContentType.objects.clear_cache()
+
     def setUp(self):
         self.guest_client = Client()
         self.user = User.objects.create_user(username='test-user')
@@ -80,10 +83,12 @@ class PostsPagesTests(TestCase):
         }
         for reverse_name, template in templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
+                cache.clear()
                 response = authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
 
     def test_index_page_show_correct_context(self):
+        cache.clear()
         response = self.authorized_client.get(self.url_index)
         self.assertIn('page_obj', response.context)
 
@@ -120,6 +125,7 @@ class PostsPagesTests(TestCase):
         different_urls = (self.url_index, self.url_group, self.url_profile)
         for item in different_urls:
             with self.subTest(item=item):
+                cache.clear()
                 response = self.guest_client.get(item)
                 self.assertEqual(
                     'Тестовый текст',
@@ -206,6 +212,7 @@ class PaginatorViewsTest(TestCase):
         }
         for address, kwargs in pages_tested.items():
             with self.subTest(address=address, kwargs=kwargs):
+                cache.clear()
                 response = authorized_client.get(reverse(
                     address,
                     kwargs=kwargs
@@ -221,6 +228,7 @@ class PaginatorViewsTest(TestCase):
         }
         for address, kwargs in pages_tested.items():
             with self.subTest(address=address, kwargs=kwargs):
+                cache.clear()
                 response = authorized_client.get(reverse(
                     address,
                     kwargs=kwargs

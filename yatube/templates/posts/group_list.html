@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ group.title }}{% endblock %}
+{# Что ты имеешь в виду под thumbnail? Если миниатюры как картинки, так мы ж их не делали. А title исправил. #}
 {% block content %}
     <div class="container py-5">
         <h1>{{ group }}</h1>

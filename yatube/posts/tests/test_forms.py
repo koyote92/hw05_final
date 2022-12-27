@@ -1,6 +1,5 @@
 import shutil
 import tempfile
-
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
 from django.test import Client, TestCase, override_settings
