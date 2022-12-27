@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from http import HTTPStatus
 
-from ..models import Post, Group, Comment, Follow
+from ..models import Post, Group, Comment
 
 User = get_user_model()
 
