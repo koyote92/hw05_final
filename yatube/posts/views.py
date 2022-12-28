@@ -97,6 +97,7 @@ def post_edit(request, post_id):
     )
 
 
+# Этой вью нет в спринте, сделана для себя.
 @login_required
 def post_delete(request, post_id):
     post = get_object_or_404(Post.objects.select_related('group'), id=post_id)
@@ -126,8 +127,7 @@ def add_comment(request, post_id):
     return render(request, 'posts/post_details.html', context)
 
 
-# Я сам уже думал, что это лучше делать не так. Пока оставлю как есть, чтобы
-# убирать тестовые комменты.
+# Этой вью нет в спринте, сделана для себя.
 @login_required
 def delete_comment(request, post_id, comment_id):
     post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
