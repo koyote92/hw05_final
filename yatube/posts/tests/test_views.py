@@ -61,9 +61,6 @@ class PostsPagesTests(TestCase):
             kwargs={'post_id': cls.test_post.id}
         )
 
-    # def tearDownClass(cls):
-    #     ContentType.objects.clear_cache()
-
     def setUp(self):
         self.guest_client = Client()
         self.user = User.objects.create_user(username='test-user')
@@ -254,27 +251,16 @@ class IndexCacheTests(TestCase):
 
     def test_cache_index_page(self):
         first_state = self.authorized_client.get(self.url_index)
-        # print(f'\n{first_state.content}')
-        # print('--------------------------------')
-        # print(first_state.context['page_obj'][0].text)
         post = Post.objects.get(id=self.test_post.id)
         post.text = 'Изменённый текст'
         post.save()
         second_state = self.authorized_client.get(self.url_index)
-        # print(f'\n{second_state.content}')
-        # print('--------------------------------')
-        # print(second_state.context['page_obj'][0].text)
         self.assertEqual(first_state.content, second_state.content)
         cache.clear()
         third_state = self.authorized_client.get(self.url_index)
         self.assertNotEqual(first_state.content, third_state.content)
 
 
-# И тут я тоже копировал/вставил, только сделал сетапкласс по-своему.
-# Вчера объяснял двум студентам, как делать тесты вьюх, нашёл пару интересных
-# решений, как отрефакторить тесты и узнал методом научного тыка, что юзера
-# можно создавать в сетапклассе, а логинить в сетапе. Тогда можно избежать
-# разлогиниваний в процессе тестов. Но этот проект пефакторить не хочу.
 class FollowTests(TestCase):
     @classmethod
     def setUpClass(cls):
