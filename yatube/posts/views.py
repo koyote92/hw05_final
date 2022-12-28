@@ -8,8 +8,6 @@ from .models import Post, Group, User, Follow
 from .utils import paginate_page
 
 
-# Я тоже сюда сначала добавил кэширование, а потом в теории сказали "в этом
-# проекте пихайте в шаблон".
 @cache_page(20)
 def index(request):
     posts = Post.objects.select_related('author', 'group')
@@ -50,7 +48,7 @@ def profile(request, username):
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post.objects.select_related('group'), id=post_id)
-    comments = post.comments.select_related('post')  # Правильно?
+    comments = post.comments.select_related('post')
     context = {
         'post': post,
         'comments': comments,
@@ -111,7 +109,7 @@ def post_delete(request, post_id):
 @login_required
 def add_comment(request, post_id):
     post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
-    comments = post.comments.select_related('post')  # Правильно? Или 404?
+    comments = post.comments.select_related('post')
     form = CommentForm(request.POST or None)
     if form.is_valid():
         comment = form.save(commit=False)

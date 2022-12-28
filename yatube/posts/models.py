@@ -92,7 +92,7 @@ class Comment(models.Model):
     )
     text = models.TextField(
         verbose_name='Текст',
-        help_text='Текст комментария',  # Это в форме участвует.
+        help_text='Текст комментария',
     )
     created = models.DateTimeField(
         auto_now_add=True,
