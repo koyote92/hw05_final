@@ -50,7 +50,7 @@ class PostFormTests(TestCase):
         self.uploaded_image = SimpleUploadedFile(
             name='small.gif',
             content=self.small_gif,
-            content_type='image/gif'
+            content_type='image/gif',
         )
 
     def test_create_post(self):
